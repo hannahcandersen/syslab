@@ -9,7 +9,7 @@
 
 void handle_request ( int fd );
 int  create_listen_fd ( int port);
-void handle_connection_request ( int listen_fd );
+void *handle_connection_request(void *arg);
 void get_client_socket_address ( struct sockaddr *client_addr, char *hostname, char *port);
 void set_listen_socket_address ( struct sockaddr_in *listen_addr, int port );
 int  get_server_socket_address_candidates ( struct addrinfo **cand_ai, char* hostname, char* port );

@@ -13,11 +13,14 @@ error.o: error.c error.h
 io.o: io.c io.h
 	$(CC) $(CFLAGS) -c io.c
 
+cache.o: cache.c cache.h
+	$(CC) $(CFLAGS) -c cache.c
+
 proxy.o: proxy.c proxy.h
 	$(CC) $(CFLAGS) -c proxy.c
 
-proxy: proxy.o error.o io.o http.o
-	$(CC) $(CFLAGS) error.o io.o http.o proxy.o -o proxy $(LDFLAGS)
+proxy: proxy.o error.o io.o http.o cache.o
+	$(CC) $(CFLAGS) error.o io.o http.o cache.o proxy.o -o proxy $(LDFLAGS)
 
 clean:
 	rm -f *~ *.o proxy core *.tar *.zip *.gzip *.bzip *.gz
