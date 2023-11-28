@@ -61,7 +61,7 @@ int main(int argc, char **argv)
 
         /* When a new connection request is accepted, the proxy will create a new thread to handle that specific connection. */
         pthread_t thread;
-        pthread_create(&thread, NULL, handle_connection_request, (void *)(intptr_t)client_fd);   // (Thread pointer, attributes, function to run, arguments to function)
+        pthread_create(&thread, NULL, handle_connection_request, (void *)(intptr_t)client_fd); // (Thread pointer, attributes, function to run, arguments to function)
     }
 
     return 0; // Indicates "no error" (although this is never reached).
@@ -77,7 +77,7 @@ void *handle_connection_request(void *arg)
     printf("\e[1mcreated detached thread\e[0m\n");
 
     // Get the client_fd
-    int client_fd = (int)(intptr_t)arg; 
+    int client_fd = (int)(intptr_t)arg;
 
     // Actually handle the request
     handle_request(client_fd);
@@ -121,7 +121,7 @@ void handle_request(int client_fd) // Client socket
 
     /* print what we just read (it's not null-terminated) */
     printf("%.*s", (int)num_bytes, buf); // typeast is safe; num_bytes <= MAX_LINE
-    sscanf(buf, "%s %s %s", method, uri, version); 
+    sscanf(buf, "%s %s %s", method, uri, version);
 
     /* Ignore non-GET requests (your proxy is only tested on GET requests). */
     if (error_non_get(method))
@@ -172,7 +172,7 @@ void handle_request(int client_fd) // Client socket
        (until server responds with EOF). */
 
     // Read response from server if there is any
-    // Check the size of the response 
+    // Check the size of the response
     // If it is small enough, then cache it
 
     char *response_buf = malloc(MAX_OBJECT_SIZE); // Buffer to store the response from the server
@@ -210,7 +210,7 @@ void handle_request(int client_fd) // Client socket
     // Check if the response is cacheable
     if (total_bytes <= MAX_OBJECT_SIZE)
     {
-        // Create a new cache entry 
+        // Create a new cache entry
         CacheEntry *entry = createNewEntry(uri, response_buf, cache);
         if (entry == NULL) // If the entry could not be created
         {
