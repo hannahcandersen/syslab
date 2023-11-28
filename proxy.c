@@ -135,7 +135,6 @@ void handle_request(int client_fd) // Client socket
     {
         // Write the cached response to the client
         write_all(client_fd, cached_response, strlen(cached_response));
-        printf("\e[1mWrote cached response to client %s\e[0m\n", cached_response);
         if (error_write_client(client_fd, strlen(cached_response)))
         {
             return;
@@ -206,10 +205,7 @@ void handle_request(int client_fd) // Client socket
         }
     }
 
-
     printf("\e[1mGot response from server. Will try to cache it.\e[0m\n");
-    printf("\e[1mHER.\e[0m\n");
-    printf("\e[1mHER: Response buf: %s.\e[0m\n", response_buf);
 
     // Check if the response is cacheable
     if (total_bytes <= MAX_OBJECT_SIZE)
