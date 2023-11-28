@@ -135,6 +135,7 @@ void handle_request(int client_fd) // Client socket
     {
         // Write the cached response to the client
         write_all(client_fd, cached_response, strlen(cached_response));
+        printf("\e[1mWrote cached response to client %s\e[0m\n", cached_response);
         if (error_write_client(client_fd, strlen(cached_response)))
         {
             return;
