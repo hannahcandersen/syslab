@@ -207,6 +207,7 @@ void handle_request(int client_fd) // Client socket
 
 
     printf("\e[1mGot response from server. Will try to cache it.\e[0m\n");
+    printf("\e[1mHER.\e[0m\n");
     printf("\e[1mHER: Response buf: %s.\e[0m\n", response_buf);
 
     // Check if the response is cacheable
