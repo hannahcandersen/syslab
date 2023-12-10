@@ -55,8 +55,7 @@ int main(int argc, char **argv)
 
         // Create a new thread to handle the connection
         pthread_t thread;
-        pthread_create(&thread, NULL, &handle_connection_request, client_fd); // (Thread pointer, attributes, function to run, arguments to function)
-        pthread_detach(thread); // Detach the thread, so its resources are automatically released when it finishes
+        pthread_create(&thread, NULL, &handle_connection_request, (void *)(intptr_t)client_fd); // (Thread pointer, attributes, function to run, arguments to function) intptr_t is a signed integer type such that any valid (void *) value can be converted to this type and then converted back.
         printf("\e[1mcreated detached thread\e[0m\n");
     }
 
@@ -64,13 +63,16 @@ int main(int argc, char **argv)
 }
 
 // Thread worker function
-void handle_connection_request(int client_fd)
+void *handle_connection_request(void *arg)
 {
     int return_cd; // return- (aka. error-) code of function calls.
 
     // Detach the thread, so its resources are automatically released when it finishes
     pthread_detach(pthread_self()); 
     printf("\e[1mcreated detached thread\e[0m\n");
+
+    // Get the client_fd
+    int client_fd = (int)(intptr_t)arg;
 
     // Actually handle the request
     handle_request(client_fd);
