@@ -1,6 +1,5 @@
 /**
  * @author Hannah Andersen <hcan@itu.dk>
- * Solution is inspired by my clab solution and https://www.geeksforgeeks.org/lru-cache-implementation/
  */
 
 #include <pthread.h>

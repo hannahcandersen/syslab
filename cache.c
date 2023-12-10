@@ -1,6 +1,5 @@
 /**
  * @author Hannah Andersen <hcan@itu.dk>
- * Solution is inspired by my clab solution and https://www.geeksforgeeks.org/lru-cache-implementation/ 
  */
 
 
@@ -153,7 +152,6 @@ CacheEntry* createNewEntry(char *clientRequest, char *serverResponse, CacheQueue
     if (cache_entry == NULL)
     { // Allocation failed
         printf("\033[33mcache:\033[0m Allocation for cache_entry failed\n");
-
         return NULL;
     }
 

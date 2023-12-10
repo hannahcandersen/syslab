@@ -42,65 +42,34 @@ int main(int argc, char **argv)
     /* Handle connection requests. */
     while (1)
     {
-        // Wait for a connection request
         printf("\e[1mawaiting connection request...\e[0m\n");
 
-        /* "Kernel, give me the fd of a connected socket for the next connection request."
-           NOTE: this blocks the proxy until a connection arrives.
-           https://man7.org/linux/man-pages/man2/accept.2.html (a system call) */
-        client_fd = accept(listen_fd, (struct sockaddr *)NULL, NULL); // accept awaiting request
-        if (error_accept_fatal(client_fd))
-        {
-            exit(1);
-        }
-        if (error_accept(client_fd))
-        {
+        // Accept connection request and create a new socket for the connection
+        // Blocks until a connection request arrives
+        client_fd = accept(listen_fd, (struct sockaddr *)NULL, NULL); 
+        if (error_accept_fatal(client_fd)){exit(1);}
+        if (error_accept(client_fd)){
             printf("\e[1mfailed connection request\e[0m\n");
             continue;
         }
 
-        /* When a new connection request is accepted, the proxy will create a new thread to handle that specific connection. */
+        // Create a new thread to handle the connection
         pthread_t thread;
-        pthread_create(&thread, NULL, handle_connection_request, (void *)(intptr_t)client_fd); // (Thread pointer, attributes, function to run, arguments to function)
+        pthread_create(&thread, NULL, handle_request, client_fd); // (Thread pointer, attributes, function to run, arguments to function)
+        pthread_detach(thread); // Detach the thread, so its resources are automatically released when it finishes
+        printf("\e[1mcreated detached thread\e[0m\n");
     }
 
     return 0; // Indicates "no error" (although this is never reached).
 }
 
-// Thread worker function
-void *handle_connection_request(void *arg)
+
+void handle_request(int client_fd)
 {
-    int return_cd; // return- (aka. error-) code of function calls.
-
-    pthread_detach(pthread_self()); // Detach the thread, so its resources are automatically released when it finishes
-
-    printf("\e[1mcreated detached thread\e[0m\n");
-
-    // Get the client_fd
-    int client_fd = (int)(intptr_t)arg;
-
-    // Actually handle the request
-    handle_request(client_fd);
-
-    // sleep(10); // To test that multiple threads can run at the same time
-    printf("\e[1mthread done\e[0m\n");
-
-    /* "Kernel, we done handling request; close fd." (errors ignored; see man page)
-    https://man7.org/linux/man-pages/man2/close.2.html (a system call) */
-    return_cd = close(client_fd);
-    if (error_close(return_cd))
-    { /* ignore */
-    }
-
-    return 0; // Indicates "no error"
-}
-
-void handle_request(int client_fd) // Client socket
-{
-    int server_fd; // server file descriptor / Server socket
+    int server_fd; // Server socket
 
     /* String variables */
-    char buf[MAX_LINE];         // What is read from the client
+    char buf[MAX_LINE];         // Buffer for reading from client
     char method[MAX_LINE];      // HTTP Method
     char uri[MAX_LINE];         // URI requested from client
     char version[MAX_LINE];     // HTTP Version
@@ -110,24 +79,18 @@ void handle_request(int client_fd) // Client socket
     char request_hdr[MAX_LINE]; // Request to send to server
 
     int return_cd;
-    ssize_t num_bytes; // number of bytes read from client
+    ssize_t num_bytes; // Number of bytes read from client
 
     /* read HTTP Request-line from client into buf */
     num_bytes = read_line(client_fd, buf);
-    if (error_read(num_bytes))
-    {
-        return;
-    }
+    if (error_read(num_bytes)) {return;}
 
     /* print what we just read (it's not null-terminated) */
     printf("%.*s", (int)num_bytes, buf); // typeast is safe; num_bytes <= MAX_LINE
     sscanf(buf, "%s %s %s", method, uri, version);
 
     /* Ignore non-GET requests (your proxy is only tested on GET requests). */
-    if (error_non_get(method))
-    {
-        return;
-    }
+    if (error_non_get(method)) { return; }
 
     /* Check if the requested object is in the cache */
     char *cached_response = findRequestInCache(uri, cache);
@@ -135,42 +98,28 @@ void handle_request(int client_fd) // Client socket
     {
         // Write the cached response to the client
         write_all(client_fd, cached_response, strlen(cached_response));
-        if (error_write_client(client_fd, strlen(cached_response)))
-        {
-            return;
-        }
+        if (error_write_client(client_fd, strlen(cached_response))){ return; }
         return;
     }
 
-    // Continue here if the object is not in the cache
+    /* Continue here if the object is not in the cache */
 
     /* Parse URI from GET request into hostname, path and port */
     parse_uri(uri, hostname, path, port);
 
     /* Set the request header to send to server */
     return_cd = set_request_header(request_hdr, hostname, path, port, client_fd);
-    if (error_header(return_cd))
-    {
-        return;
-    }
+    if (error_header(return_cd)){ return; }
 
-    /* Create the server fd / server connection */
-    server_fd = create_server_fd(hostname, port); // Creates a new socket for each connection request
-    if (error_socket_server(server_fd))
-    {
-        return;
-    }
+    /* Create the server fd / server socket */
+    server_fd = create_server_fd(hostname, port); 
+    if (error_socket_server(server_fd)) { return; }
 
     /* Write the request (header) to the server. */
     return_cd = write_all(server_fd, request_hdr, strlen(request_hdr));
-    if (error_write_server(server_fd, return_cd))
-    {
-        return;
-    }
+    if (error_write_server(server_fd, return_cd)) { return; }
 
-    /* Transfer the response from the server, to the client.
-       (until server responds with EOF). */
-
+    /* Transfer the response from the server, to the client. (until server responds with EOF). */
     // Read response from server if there is any
     // Check the size of the response
     // If it is small enough, then cache it
@@ -226,7 +175,14 @@ void handle_request(int client_fd) // Client socket
 
     printf("\e[1mfinished processing request.\e[0m\n");
 
-    /* success; close the file descrpitor. */
+    // Close the client socket
+    printf("\e[1mthread done\e[0m\n");
+    return_cd = close(client_fd);
+    if (error_close(return_cd))
+    { /* ignore */
+    }
+
+    // Close the server socket
     return_cd = close(server_fd);
     if (error_close_server(return_cd))
     { /* ignore */
