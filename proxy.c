@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 
         // Create a new thread to handle the connection
         pthread_t thread;
-        pthread_create(&thread, NULL, handle_request, client_fd); // (Thread pointer, attributes, function to run, arguments to function)
+        pthread_create(&thread, NULL, &handle_connection_request, client_fd); // (Thread pointer, attributes, function to run, arguments to function)
         pthread_detach(thread); // Detach the thread, so its resources are automatically released when it finishes
         printf("\e[1mcreated detached thread\e[0m\n");
     }
@@ -63,6 +63,27 @@ int main(int argc, char **argv)
     return 0; // Indicates "no error" (although this is never reached).
 }
 
+// Thread worker function
+void handle_connection_request(int client_fd)
+{
+    int return_cd; // return- (aka. error-) code of function calls.
+
+    // Detach the thread, so its resources are automatically released when it finishes
+    pthread_detach(pthread_self()); 
+    printf("\e[1mcreated detached thread\e[0m\n");
+
+    // Actually handle the request
+    handle_request(client_fd);
+
+    // Close the client socket
+    printf("\e[1mthread done\e[0m\n");
+    return_cd = close(client_fd);
+    if (error_close(return_cd))
+    { /* ignore */
+    }
+
+    return 0; // Indicates "no error"
+}
 
 void handle_request(int client_fd)
 {
@@ -174,13 +195,6 @@ void handle_request(int client_fd)
     free(response_buf);
 
     printf("\e[1mfinished processing request.\e[0m\n");
-
-    // Close the client socket
-    printf("\e[1mthread done\e[0m\n");
-    return_cd = close(client_fd);
-    if (error_close(return_cd))
-    { /* ignore */
-    }
 
     // Close the server socket
     return_cd = close(server_fd);
