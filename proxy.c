@@ -84,7 +84,7 @@ void *handle_connection_request(void *arg)
     { /* ignore */
     }
 
-    return 0; // Indicates "no error"
+    return;
 }
 
 void handle_request(int client_fd)
